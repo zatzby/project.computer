@@ -1,51 +1,69 @@
 <script lang="ts">
-    import TodoList from '../lib/components/TodoList.svelte'; // Adjust the path as necessary
-    import type { Todo } from '../lib/types';
+  import TodoList from '../lib/components/TodoList.svelte';
+  import type { Todo } from '../lib/types';
+  import { onMount } from 'svelte';
 
-    type TodoListType = {
-      id: string;
-      title: string;
-      todos: Todo[];
-      isEditing: boolean; // Property to track editing state
+  type TodoListType = {
+    id: string;
+    title: string;
+    todos: Todo[];
+    isEditing: boolean;
+  };
+
+  let todoLists: TodoListType[] = [];
+
+  onMount(() => {
+    todoLists = loadFromLocalStorage();
+  });
+
+  // Load todo lists from local storage
+  function loadFromLocalStorage(): TodoListType[] {
+    const storedLists = localStorage.getItem('todoLists');
+    return storedLists ? JSON.parse(storedLists) : [];
+  }
+
+  // Save todo lists to local storage
+  function saveToLocalStorage(lists: TodoListType[]): void {
+    localStorage.setItem('todoLists', JSON.stringify(lists));
+  }
+
+  function addNewList(): void {
+    const newList: TodoListType = {
+      id: `list-${todoLists.length + 1}`,
+      title: `New List ${todoLists.length + 1}`,
+      todos: [],
+      isEditing: false
     };
-  
-    let todoLists: TodoListType[] = [
-      { id: 'list-1', title: 'My First List', todos: [], isEditing: false }
-    ];
-  
-    function addNewList(): void {
-      const newList: TodoListType = {
-        id: `list-${todoLists.length + 1}`,
-        title: `New List ${todoLists.length + 1}`,
-        todos: [],
-        isEditing: false
-      };
-      todoLists = [...todoLists, newList];
-    }
-  
-    function deleteList(listId: string): void {
-      todoLists = todoLists.filter(list => list.id !== listId);
-    }
-  
-    function toggleEditListName(listId: string): void {
-      todoLists = todoLists.map(list => {
-        if (list.id === listId) {
-          return { ...list, isEditing: !list.isEditing };
-        }
-        return list;
-      });
-    }
-  
-    function updateListName(event: Event, listId: string): void {
-      const target = event.target as HTMLInputElement;
-      todoLists = todoLists.map(list => {
-        if (list.id === listId) {
-          return { ...list, title: target.value };
-        }
-        return list;
-      });
-    }
-  </script>
+    todoLists = [...todoLists, newList];
+    saveToLocalStorage(todoLists);
+  }
+
+  function deleteList(listId: string): void {
+    todoLists = todoLists.filter(list => list.id !== listId);
+    saveToLocalStorage(todoLists);
+  }
+
+  function toggleEditListName(listId: string): void {
+    todoLists = todoLists.map(list => {
+      if (list.id === listId) {
+        return { ...list, isEditing: !list.isEditing };
+      }
+      return list;
+    });
+    saveToLocalStorage(todoLists);
+  }
+
+  function updateListName(event: Event, listId: string): void {
+    const target = event.target as HTMLInputElement;
+    todoLists = todoLists.map(list => {
+      if (list.id === listId) {
+        return { ...list, title: target.value };
+      }
+      return list;
+    });
+    saveToLocalStorage(todoLists);
+  }
+</script>
   
   <style>
     h1 {
@@ -87,6 +105,26 @@
       color: #555;
       margin-bottom: 10px;
     }
+
+    .list-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.list-container > div {
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
   </style>
   
 
@@ -94,6 +132,7 @@
   
   <button on:click={addNewList}>Add New List</button>
   
+  <div class="list-container">
   {#each todoLists as todoList}
     <div>
       {#if todoList.isEditing}
@@ -113,4 +152,4 @@
       <button on:click={() => deleteList(todoList.id)}>Delete List</button>
     </div>
   {/each}
-  
+</div>
